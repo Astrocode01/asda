@@ -1,0 +1,218 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <chrono>
+using namespace std;
+using namespace chrono;
+
+struct Item {
+    int weight, profit, index;
+    double ratio;
+};
+
+struct Node {
+    int level;
+    int weight;
+    int profit;
+    double bound;
+    vector<int> selected;
+};
+
+bool compare(Item a, Item b) {
+    return a.ratio > b.ratio;
+}
+
+double calculateBound(Node u, int n, int W, Item items[]) {
+    if (u.weight >= W)
+        return 0;
+
+    double profitBound = u.profit;
+    int totalWeight = u.weight;
+    int j = u.level;
+
+    while (j < n && totalWeight + items[j].weight <= W) {
+        totalWeight += items[j].weight;
+        profitBound += items[j].profit;
+        j++;
+    }
+
+    if (j < n) {
+        profitBound +=
+            (W - totalWeight) * items[j].ratio;
+    }
+
+    return profitBound;
+}
+
+struct Compare {
+    bool operator()(Node a, Node b) {
+        return a.bound < b.bound;
+    }
+};
+
+void branchAndBound(Item items[], int n, int W) {
+    sort(items, items + n, compare);
+
+    priority_queue<Node, vector<Node>, Compare> pq;
+
+    Node root;
+    root.level = 0;
+    root.weight = 0;
+    root.profit = 0;
+    root.selected.clear();
+
+    root.bound = calculateBound(root, n, W, items);
+
+    pq.push(root);
+
+    int maxProfit = 0;
+    vector<int> bestItems;
+
+    while (!pq.empty()) {
+        Node u = pq.top();
+        pq.pop();
+
+        if (u.bound <= maxProfit || u.level >= n)
+            continue;
+
+        Node v;
+
+        v.level = u.level + 1;
+        v.weight = u.weight + items[u.level].weight;
+        v.profit = u.profit + items[u.level].profit;
+        v.selected = u.selected;
+        v.selected.push_back(items[u.level].index);
+
+        if (v.weight <= W && v.profit > maxProfit) {
+            maxProfit = v.profit;
+            bestItems = v.selected;
+        }
+
+        v.bound = calculateBound(v, n, W, items);
+
+        if (v.bound > maxProfit)
+            pq.push(v);
+
+        Node w;
+
+        w.level = u.level + 1;
+        w.weight = u.weight;
+        w.profit = u.profit;
+        w.selected = u.selected;
+
+        w.bound = calculateBound(w, n, W, items);
+
+        if (w.bound > maxProfit)
+            pq.push(w);
+    }
+
+    cout << "\nBranch and Bound Maximum Profit: "
+         << maxProfit << endl;
+
+    cout << "Selected Items: ";
+
+    for (int x : bestItems)
+        cout << x << " ";
+
+    cout << endl;
+}
+
+int dynamicProgramming(Item items[], int n, int W) {
+    int dp[101][1001] = {};
+
+    for (int i = 1; i <= n; i++) {
+        for (int w = 0; w <= W; w++) {
+            if (items[i - 1].weight <= w) {
+                dp[i][w] = max(
+                    items[i - 1].profit +
+                    dp[i - 1][w - items[i - 1].weight],
+                    dp[i - 1][w]
+                );
+            }
+            else {
+                dp[i][w] = dp[i - 1][w];
+            }
+        }
+    }
+
+    return dp[n][W];
+}
+
+int main() {
+    int n, W;
+
+    cout << "Enter number of items: ";
+    cin >> n;
+
+    Item items[100];
+
+    for (int i = 0; i < n; i++) {
+        cout << "Enter weight and profit: ";
+        cin >> items[i].weight >> items[i].profit;
+
+        items[i].index = i + 1;
+        items[i].ratio =
+            (double)items[i].profit / items[i].weight;
+    }
+
+    cout << "Enter knapsack capacity: ";
+    cin >> W;
+
+    auto start1 = high_resolution_clock::now();
+
+    branchAndBound(items, n, W);
+
+    auto stop1 = high_resolution_clock::now();
+
+    auto time1 =
+        duration_cast<microseconds>(stop1 - start1);
+
+    auto start2 = high_resolution_clock::now();
+
+    int dpProfit = dynamicProgramming(items, n, W);
+
+    auto stop2 = high_resolution_clock::now();
+
+    auto time2 =
+        duration_cast<microseconds>(stop2 - start2);
+
+    cout << "\nDynamic Programming Maximum Profit: "
+         << dpProfit << endl;
+
+    cout << "\nEfficiency Comparison:\n";
+
+    cout << "Branch and Bound Time: "
+         << time1.count() << " microseconds\n";
+
+    cout << "Dynamic Programming Time: "
+         << time2.count() << " microseconds\n";
+
+    cout << "Branch and Bound Worst Case: O(2^n)\n";
+    cout << "Dynamic Programming: O(n * W)\n";
+
+    cout << "Branch and Bound Space: O(2^n)\n";
+    cout << "Dynamic Programming Space: O(n * W)\n";
+
+    return 0;
+}
+
+
+
+
+
+//inputs
+4
+2 40
+3 50
+5 100
+4 60
+10
+
+
+
+//output
+Branch and Bound Maximum Profit: 190
+Selected Items: 1 2 3
+
+Dynamic Programming Maximum Profit: 190
