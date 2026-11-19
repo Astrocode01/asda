@@ -1,0 +1,130 @@
+#include <iostream>
+#include <vector>
+#include <list>
+using namespace std;
+
+const int SIZE = 10;
+
+class HashTable {
+    list<int> chain[SIZE];
+    int table[SIZE];
+
+public:
+    HashTable() {
+        for (int i = 0; i < SIZE; i++)
+            table[i] = -1;
+    }
+
+    int hashFunction(int key) {
+        return key % SIZE;
+    }
+
+    void insertChaining(int key) {
+        int index = hashFunction(key);
+        chain[index].push_back(key);
+    }
+
+    bool searchChaining(int key) {
+        int index = hashFunction(key);
+
+        for (int x : chain[index]) {
+            if (x == key)
+                return true;
+        }
+
+        return false;
+    }
+
+    void insertProbing(int key) {
+        int index = hashFunction(key);
+
+        for (int i = 0; i < SIZE; i++) {
+            int pos = (index + i) % SIZE;
+
+            if (table[pos] == -1) {
+                table[pos] = key;
+                return;
+            }
+        }
+
+        cout << "Hash table is full\n";
+    }
+
+    bool searchProbing(int key) {
+        int index = hashFunction(key);
+
+        for (int i = 0; i < SIZE; i++) {
+            int pos = (index + i) % SIZE;
+
+            if (table[pos] == key)
+                return true;
+
+            if (table[pos] == -1)
+                return false;
+        }
+
+        return false;
+    }
+
+    void display() {
+        cout << "\nChaining:\n";
+
+        for (int i = 0; i < SIZE; i++) {
+            cout << i << " -> ";
+            for (int x : chain[i])
+                cout << x << " -> ";
+            cout << "NULL\n";
+        }
+
+        cout << "\nLinear Probing:\n";
+
+        for (int i = 0; i < SIZE; i++)
+            cout << i << " -> " << table[i] << endl;
+    }
+};
+
+int main() {
+    HashTable h;
+    int n, key;
+
+    cout << "Enter number of elements: ";
+    cin >> n;
+
+    cout << "Enter elements:\n";
+
+    for (int i = 0; i < n; i++) {
+        cin >> key;
+        h.insertChaining(key);
+        h.insertProbing(key);
+    }
+
+    h.display();
+
+    cout << "\nEnter element to search: ";
+    cin >> key;
+
+    cout << "Chaining: "
+         << (h.searchChaining(key) ? "Found" : "Not Found") << endl;
+
+    cout << "Linear Probing: "
+         << (h.searchProbing(key) ? "Found" : "Not Found") << endl;
+
+    return 0;
+}
+
+
+
+
+
+//inputs
+5
+12
+22
+32
+15
+25
+22
+
+
+//outputs
+u'll get
