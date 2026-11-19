@@ -1,0 +1,156 @@
+#include <iostream>
+using namespace std;
+
+struct Node {
+    int data;
+    Node *left, *right;
+    bool lthread, rthread;
+
+    Node(int value) {
+        data = value;
+        left = right = NULL;
+        lthread = rthread = true;
+    }
+};
+
+class ThreadedTree {
+    Node *root;
+
+public:
+    ThreadedTree() {
+        root = NULL;
+    }
+
+    void insert(int key) {
+        Node *ptr = root;
+        Node *parent = NULL;
+
+        while (ptr != NULL) {
+            if (key == ptr->data)
+                return;
+
+            parent = ptr;
+
+            if (key < ptr->data) {
+                if (!ptr->lthread)
+                    ptr = ptr->left;
+                else
+                    break;
+            } else {
+                if (!ptr->rthread)
+                    ptr = ptr->right;
+                else
+                    break;
+            }
+        }
+
+        Node *temp = new Node(key);
+
+        if (parent == NULL) {
+            root = temp;
+        }
+        else if (key < parent->data) {
+            temp->left = parent->left;
+            temp->right = parent;
+            parent->lthread = false;
+            parent->left = temp;
+        }
+        else {
+            temp->right = parent->right;
+            temp->left = parent;
+            parent->rthread = false;
+            parent->right = temp;
+        }
+    }
+
+    Node* leftMost(Node *ptr) {
+        if (ptr == NULL)
+            return NULL;
+
+        while (!ptr->lthread)
+            ptr = ptr->left;
+
+        return ptr;
+    }
+
+    void inorder() {
+        Node *ptr = leftMost(root);
+
+        cout << "Inorder: ";
+
+        while (ptr != NULL) {
+            cout << ptr->data << " ";
+
+            if (ptr->rthread)
+                ptr = ptr->right;
+            else
+                ptr = leftMost(ptr->right);
+        }
+
+        cout << endl;
+    }
+
+    void preorder() {
+        Node *ptr = root;
+
+        cout << "Preorder: ";
+
+        while (ptr != NULL) {
+            cout << ptr->data << " ";
+
+            if (!ptr->lthread) {
+                ptr = ptr->left;
+            }
+            else if (!ptr->rthread) {
+                ptr = ptr->right;
+            }
+            else {
+                while (ptr != NULL && ptr->rthread)
+                    ptr = ptr->right;
+
+                if (ptr != NULL)
+                    ptr = ptr->right;
+            }
+        }
+
+        cout << endl;
+    }
+};
+
+int main() {
+    ThreadedTree t;
+    int n, x;
+
+    cout << "Enter number of nodes: ";
+    cin >> n;
+
+    cout << "Enter node values:\n";
+
+    for (int i = 0; i < n; i++) {
+        cin >> x;
+        t.insert(x);
+    }
+
+    t.inorder();
+    t.preorder();
+
+    return 0;
+}
+
+
+
+
+
+//inputs
+5
+50
+30
+70
+20
+40
+
+
+
+//output
+Inorder: 20 30 40 50 70
+Preorder: 50 30 20 40 70
